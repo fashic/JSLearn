@@ -1,1 +1,1 @@
-JS course study project from learn.javascript.ru
+JS course study project from learn.javascript.ru.
