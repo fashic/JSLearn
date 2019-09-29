@@ -1,13 +1,24 @@
-export class TradeWidget {
-  constructor({ element, buyInfo }) {
+import {Component} from '../Component/Component.js'
+
+export class TradeWidget extends Component{
+  constructor({ element }) {
+    super();
     this._el = element;
-    this._buyInfoCallback = buyInfo;
-    // обработчик событий ввода кол-ва монет
+
+    this._el.addEventListener('keydown', e => {
+      if(!e.target.closest('#amount')) return;
+
+      const { key } = e;
+      if (!isNumeric(key) && key !== 'Backspace' && key !== '.') {
+        e.preventDefault();
+      };
+    })
+
     this._el.addEventListener("input", e => {
       const value = +e.target.value;
       this._updateDisplay(value);
     });
-    // Close to button
+
     this._el.addEventListener("click", e => {
       e.preventDefault();
 
@@ -15,7 +26,14 @@ export class TradeWidget {
         this._close();
       }
       if (e.target.closest('[data-action="btn-buy"]')) {
-        this._buyInfo(e);
+        let buyEvent = new CustomEvent('buy', {
+          detail: {
+            item: this._currentItem,
+            amount: +this._el.querySelector("#amount").value,
+          }
+        })
+        this._el.dispatchEvent(buyEvent);
+        // this._buyInfo(e);
         this._close();
       }
     });
@@ -23,29 +41,27 @@ export class TradeWidget {
   trade(item) {
     this._currentItem = item;
     this._total = item.price * 0;
-    this._itemId = item.id; // id для портфолио
-    this._render(item); // запуск отрисовки виджета
+    this._itemId = item.id;
+    this._render(item);
   }
-  // отрисовка обновленой цены
+
   _updateDisplay(value) {
     this._totalEl = this._el.querySelector("#item-total");
     this._totalEl.textContent = this._currentItem.price * value;
     this._totalSum = this._currentItem.price * value;
   }
-  // Завершение сделки по кнопке
-  _buyInfo(e) {
-    const item = this._itemId;
-    const amount = this._el.querySelector("#amount").value;
-    this._buyInfoCallback(item, amount);
-    // console.log(id);
-    // console.log(totalSum);
-  }
-  //  закрытие виджета
+
+  // _buyInfo(e) {
+  //   const amount = +this._el.querySelector("#amount").value;
+  //   console.log(amount);
+  //   const item = this._itemId;
+  //   this._buyInfoCallback(item, amount);
+  // }
+
   _close() {
     this._el.querySelector("#modal").classList.remove("open");
   }
 
-  // Отрисовка
   _render(item) {
     this._el.innerHTML = `
       <div id="modal" class="modal open">
@@ -72,9 +88,13 @@ export class TradeWidget {
           </div>
       </div>
     `;
-    // Элементы materialize
+    // materialize element
     let elems = this._el.querySelectorAll(".collapsible");
     M.Collapsible.init(elems);
   }
+}
+
+function isNumeric(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
 }
 

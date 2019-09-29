@@ -1,6 +1,6 @@
 
 export class Portfolio {
-  constructor({ element, balance, items ={} }) {
+  constructor({ element, balance, items = {} }) {
     this._el = element;
     this._balance = balance;
     this._items = items;
@@ -16,22 +16,21 @@ export class Portfolio {
       amount: 0,
       totalPrice: 0,
     }
-    
-    console.log(currentItem.amount);
+
     currentItem.price = price;
     currentItem.amount += amount;
-    console.log(currentItem.totalPrice);
     currentItem.totalPrice = price * currentItem.amount;
     this._items[id] = currentItem;
 
-    const purchasePrice = price * amount;
-    this._balance -= purchasePrice;
-    const total = 0;
     this._portfolioWorth = Object.values(this._items)
       .reduce((total, item) => total + item.totalPrice, 0);
-    
-    console.log(amount);
-    this._render()
+
+    this._render();
+  }
+
+  updateBalance(newBalance) {
+    this._balance = newBalance;
+    this._render();
   }
 
 
@@ -42,8 +41,8 @@ export class Portfolio {
       <ul class="collapsible portfolio">
         <li>
           <p class="collapsible-header">
-              Current balance: ${this._balance}.
-              Portfolio Worth: ${this._portfolioWorth}
+              Current balance: $${this._balance}.
+              Portfolio Worth: $${this._portfolioWorth}
           </p>
           <div class="collapsible-body">
               <table class="highlight striped">
@@ -60,14 +59,14 @@ export class Portfolio {
                     items.length === 0
                       ? ''
                       : `
-                      ${items.map(item => `
-                        <tr data-id = "${item.id}">
-                          <td>${item.name}</td>
-                          <td>${item.amount}</td>
-                          <td>${item.price}</td>
-                          <td>${item.total}</td>
-                        </tr>
-                      `).join('')}
+                        ${items.map(item => `
+                          <tr data-id = "${item.id}">
+                            <td>${item.name}</td>
+                            <td>${item.amount}</td>
+                            <td>${item.price}</td>
+                            <td>${item.totalPrice}</td>
+                          </tr>
+                        `).join('')}
                     `
                   }
                 </tbody>
