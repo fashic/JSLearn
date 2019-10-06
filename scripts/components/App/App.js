@@ -1,6 +1,7 @@
-import { Table } from '../Table/Table.js';
-import { Portfolio } from '../Portfolio/Portfolio.js';
-import { TradeWidget } from '../TradeWidget/TradeWidget.js';
+// import { Table } from '../Table/Table.js';
+// import { Portfolio } from '../Portfolio/Portfolio.js';
+// import { TradeWidget } from '../TradeWidget/TradeWidget.js';
+import {Table, Portfolio, TradeWidget } from '../index.js'
 import { DataService } from '../../services/DataService.js';
 
 
@@ -10,8 +11,10 @@ export class App {
     this._userBalance = 10000;
     this._render();
 
-    this._data = DataService.getCurrencies();
-    this._initTable();
+    DataService.getCurrencies(data => {
+      this._data = data;
+      this._initTable();
+    });
 
     this._initPortfolio();
     this._initTradeWidget();
