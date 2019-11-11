@@ -36,12 +36,35 @@ const HttpService = {
 };
 
 export const DataService = {
+  _sendRequest(url) {
+    let promise = {
+      _successCallback: [],
+      _resolve(data) {
+        this._successCallback.forEach(callback => callback(data));
+      },
+      then (successCallback) {
+        this._successCallback.push(successCallback);
+      },
+    };
+
+    HttpService.sendRequest (url, data => {
+      promise._resolve(data);
+    });
+    return promise
+    
+  },
   
   getCurrencies(callback) {
-    HttpService.sendRequest(COINS_URL, data => {
-      data = data.slice(0, 10);
-      DataService.getCurrenciesPrice(data, callback);
-    });
+    // HttpService.sendRequest(COINS_URL, data => {
+    //   data = data.slice(0, 10);
+    //   DataService.getCurrenciesPrice(data, callback);
+    // });
+
+    let promise = this._sendRequest(COINS_URL);
+
+    promise.then(data => {
+      console.log(data);
+    })
   },
 
   getCurrenciesPrice (data, callback) {
