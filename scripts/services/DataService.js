@@ -1,42 +1,46 @@
-const COINS_URL = "https://api.coinpaprika.com/v1/coins/132";
+const COINS_URL = "https://api.coinpaprika.com/v1/coins";
 const getSingleCoinUrl = id => `${COINS_URL}/${id}/ohlcv/latest`;
 
 const HttpService = {
-  sendRequest(url, successCallback, errorCallback) {
-    const xhr = new XMLHttpRequest();
+  sendRequest(url) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
 
-    xhr.open('GET', url);
+      xhr.open("GET", url);
 
-    xhr.send();
+      xhr.send();
 
-    xhr.onload = () => {
-      if (xhr.status != 200) {
-        errorCallback(new Error('Oops'));
-        return;
-      } else {
-        let responseData = JSON.parse(xhr.responseText);
-        successCallback(responseData);
-      }
-    }
-
-    xhr.onerror = () => {
-      errorCallback(new Error('Oops'));
-    }
-  },
-  sendMultipleRequests(urls, callback) {
-    let requestCount = urls.length;
-    let results = [];
-
-    urls.forEach(url => {
-      HttpService.sendRequest(url, data => {
-        results.push({ url, data });
-        requestCount--;
-
-        if (!requestCount) {
-          callback(results);
+      xhr.onload = () => {
+        if (xhr.status != 200) {
+          reject(new Error("Oops"));
+          return;
+        } else {
+          let responseData = JSON.parse(xhr.responseText);
+          resolve(responseData);
         }
-      });
+      };
+
+      xhr.onerror = () => {
+        reject(new Error("Oops"));
+      };
     });
+  },
+  sendMultipleRequests(urls) {
+    let requests =urls.map(url => HttpService.sendRequest(url));
+    return Promise.all(requests);
+    // let requestCount = urls.length;
+    // let results = [];
+
+    // urls.forEach(url => {
+    //   HttpService.sendRequest(url, data => {
+    //     results.push({ url, data });
+    //     requestCount--;
+
+    //     if (!requestCount) {
+    //       callback(results);
+    //     }
+    //   });
+    // });
   }
 };
 
@@ -50,43 +54,43 @@ export const DataService = {
   },
 
   getCurrencies(callback) {
-    let promise = this._sendRequest(COINS_URL);
+    let promise = HttpService.sendRequest(COINS_URL);
 
-    promise.then(
-      data => {
-        console.log("sinc cb");
-        console.log(data);
-      },
-      err => {
-        console.error(err);
-      }
-    );
-
-    promise.catch(err => {
+    return promise.then(data => {
+        data = data.slice(0, 10);
+        return DataService.getCurrenciesPrice(data);
+    }).catch(err => {
       console.error(err);
     });
   },
 
   getCurrenciesPrice(data, callback) {
-    let coinsIds = data.map(coin => coin.id);
+    let coinsUrls = data.map(coin => getSingleCoinUrl(coin.id));
+    return HttpService.sendMultipleRequests(coinsUrls).then(coins => {
+      const dataWithPrices = data.map((item, index) => {
+        item.price = coins[index][0].close;
+        return item;
+      })
 
-    const coinsIdMap = coinsIds.reduce((acc, id) => {
-      acc[getSingleCoinUrl(id)] = id;
-      return acc;
-    }, {});
+      return dataWithPrices
+    })
+    // const coinsIdMap = coinsIds.reduce((acc, id) => {
+    //   acc[getSingleCoinUrl(id)] = id;
+    //   return acc;
+    // }, {});
 
-    HttpService.sendMultipleRequests(Object.keys(coinsIdMap), coins => {
-      const dataWithPrices = data.map(coinData => {
-        let coinPriceUrl = getSingleCoinUrl(coinData.id);
-        let [coinPriceData] = coins.find(
-          coin => coin.url === coinPriceUrl
-        ).data;
+    // HttpService.sendMultipleRequests(Object.keys(coinsIdMap), coins => {
+    //   const dataWithPrices = data.map(coinData => {
+    //     let coinPriceUrl = getSingleCoinUrl(coinData.id);
+    //     let [coinPriceData] = coins.find(
+    //       coin => coin.url === coinPriceUrl
+    //     ).data;
 
-        coinData.price = coinPriceData.close;
-        return coinData;
-      });
-      callback(dataWithPrices);
-    });
+    //     coinData.price = coinPriceData.close;
+    //     return coinData;
+    //   });
+    //   callback(dataWithPrices);
+    // });
   }
 };
 
@@ -102,7 +106,7 @@ class MyPromise {
   then(successCallback, errorCallback = () => {}) {
     if (this._status === "fulfilled") {
       successCallback(this._result);
-    } else if (this._status === 'rejected') {
+    } else if (this._status === "rejected") {
       errorCallback(this._result);
     } else {
       this._successCallback.push(successCallback);
