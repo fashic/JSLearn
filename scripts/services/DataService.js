@@ -7,18 +7,28 @@ const getSingleCoinUrl = id => `${COINS_URL}/${id}/ohlcv/latest`;
 
 export const DataService = {
 
-  getCurrencies(query = { filter: ''}) {
+  async getCurrencies(query = { filter: ''}) {
     let promise = HttpService.sendRequest(COINS_URL);
     let { filter } = query;
 
-    return promise.then(data => {
-        data = data.filter(item => {
-          return item.name.toLowerCase().includes(filter);
-        }).slice(0, 10);
-        return DataService.getCurrenciesPrice(data);
-    }).catch(err => {
+    try {
+      let data = await promise;
+      data = data.filter(item => {
+        return item.name.toLowerCase().includes(filter);
+      }).slice(0, 10);
+      return DataService.getCurrenciesPrice(data).catch(err => console.error(err));
+    } catch(err) {
       console.error(err);
-    });
+    }
+
+    // return promise.then(data => {
+    //     data = data.filter(item => {
+    //       return item.name.toLowerCase().includes(filter);
+    //     }).slice(0, 10);
+    //     return DataService.getCurrenciesPrice(data);
+    // }).catch(err => {
+    //   console.error(err);
+    // });
   },
 
   getCurrenciesPrice(data, callback) {
